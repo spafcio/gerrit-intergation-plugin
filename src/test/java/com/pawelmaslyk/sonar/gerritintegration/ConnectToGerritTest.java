@@ -1,33 +1,31 @@
 package com.pawelmaslyk.sonar.gerritintegration;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
 
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.Authentication;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnection;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFactory;
 
 
 public class ConnectToGerritTest {
 
-	private static final File GERRIT_AUTH_KEY_FILE = new File("/home/pawel/.ssh/id_rsa");
-	private static final String GERRIT_USERNAME = "pawel";
-	private static final String GERRIT_AUTH_KEY_FILE_PASSWORD = null;
-	private static final int GERRIT_SSH_PORT = 29418;
-	private static final String GERRIT_HOST = "gerrit.localhost";
+	private static final String authKey = "/home/pawel/.ssh/id_rsa";
+	private static final String authKeyPassword = null;
+	private static final String userName = "pawel";
+	private static final String sshPort = "29418";
+	private static final String hostName = "gerrit.localhost";
 
 	@Test
 	public void testIfOneCanConnectToGerrit() throws IOException {
-		Authentication authentication = new Authentication(GERRIT_AUTH_KEY_FILE, GERRIT_USERNAME, GERRIT_AUTH_KEY_FILE_PASSWORD);
-		SshConnection ssh = SshConnectionFactory.getConnection(GERRIT_HOST, GERRIT_SSH_PORT, authentication);
 		
-		String mark = "-1";
-		String change = "5";
-		String patchset = "1";
+		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, hostName);
+		SshConnection ssh = SshConnectionFactory.getConnection(connection.getSshHostName(), connection.getSshPort(), connection.getAuthentication());
 		
-		ssh.executeCommand(String.format("gerrit approve --project spafcio/fdd --message test --code-review %s %s,%s", mark, change, patchset));
+		String mark = "-2";
+		GerritCommit commit = new GerritCommit("spafcio/fdd", "5", "1");
+		
+		ssh.executeCommand(String.format("gerrit approve --project %s --message \"Sonar analysis\" --code-review %s %s,%s", commit.getProjectName(),  mark, commit.getChange(), commit.getPatch()));
 		
 		//Paul Graham - haker, inkubator
 	}

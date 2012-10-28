@@ -83,4 +83,10 @@ public class Authentication {
     public String getUsername() {
         return username;
     }
+
+	@Override
+	public String toString() {
+		return "Authentication [privateKeyFile=" + privateKeyFile + ", username=" + username
+				+ ", privateKeyFilePassword=" + privateKeyFilePassword + "]";
+	}
 }
