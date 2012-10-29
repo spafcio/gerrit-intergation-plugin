@@ -51,6 +51,27 @@
 			<version>${sonar.buildVersion}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-core</artifactId>
+			<version>1.4.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito</artifactId>
+			<version>1.4.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>1.4.12</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-project</artifactId>
+			<version>2.2.1</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -61,7 +82,7 @@
 				<version>1.1</version>
 				<extensions>true</extensions>
 				<configuration>
-					<pluginClass>com.pawelmaslyk.sonar.gerritintegration.GerritIntegrationPlugin</pluginClass>
+					<pluginClass>com.pawelmaslyk.gerritintegration4sonar.GerritIntegrationPlugin</pluginClass>
 				</configuration>
 			</plugin>
 			<plugin>

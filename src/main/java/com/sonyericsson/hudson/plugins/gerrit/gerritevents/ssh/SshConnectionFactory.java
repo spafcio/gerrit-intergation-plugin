@@ -25,6 +25,8 @@ package com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh;
 
 import java.io.IOException;
 
+import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
+
 /**
  * Factory class for {@link SshConnection}s.
  *
@@ -54,4 +56,8 @@ public abstract class SshConnectionFactory {
     public static SshConnection getConnection(String host, int port, Authentication authentication) throws IOException {
         return new SshConnectionImpl(host, port, authentication);
     }
+
+	public static SshConnection getConnection(GerritConnection connection) throws IOException {
+		return new SshConnectionImpl(connection.getSshHostName(), connection.getSshPort(), connection.getAuthentication());
+	}
 }
