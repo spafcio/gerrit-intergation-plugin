@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.utils.SonarException;
 
+import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.EmptyGerritConnection;
+
 @RunWith(PowerMockRunner.class)
 public class GerritCommitFactoryTest {
 
@@ -29,35 +31,31 @@ public class GerritCommitFactoryTest {
 		String patch = "1";
 
 		// when
-		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(projectName, change, patch)		;
-		
-		// then		
+		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(projectName, change, patch);
+
+		// then
 		assertEquals("project", commit.getProjectName());
 		assertEquals("3", commit.getChange());
 		assertEquals("1", commit.getPatch());
 	}
-	
+
 	@Test
-	@PrepareForTest({LoggerFactory.class})
+	@PrepareForTest({ LoggerFactory.class })
 	public void creatingFromEmptySettingsLogsError() throws Exception {
 		// given
 		String projectName = "";
 		String change = "";
 		String patch = "";
-		
-        mockStatic(LoggerFactory.class);
+
+		mockStatic(LoggerFactory.class);
 		Logger loggerMock = mock(Logger.class);
-		
+
 		// when
-        when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
-        try{
-        	GerritCommitFactory.createGerritCommitFromSonarSettings(projectName, change, patch);
-        	fail();
-        }
-        catch(SonarException e){
-        	// then		
-        	verify(loggerMock, times(3)).error(anyString());
-        }
+		when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
+		GerritCommit connection = GerritCommitFactory.createGerritCommitFromSonarSettings(projectName, change, patch);
+
+		// then
+		assertEquals(connection instanceof EmptyGerritCommit, true);
 	}
 
 }

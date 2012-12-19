@@ -3,7 +3,6 @@ package com.pawelmaslyk.gerritintegration4sonar.gerrit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.config.Settings;
-import org.sonar.api.utils.SonarException;
 
 import com.google.common.base.Strings;
 
@@ -49,7 +48,7 @@ public class GerritCommitFactory {
 		if (requiredParametersAreSet(projectName, change, patch)) {
 			return new GerritCommit(projectName, change, patch);
 		} else {
-			throw new SonarException("Cannot determine the gerrit details, not all required parameters are set. Please check if the all maven option are set.");
+			return new EmptyGerritCommit(projectName, change, patch);
 		}
 	}
 

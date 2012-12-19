@@ -31,18 +31,18 @@ public class GerritConnectionFactoryTest {
 		String sshHostName = "sshHostName";
 
 		// when
-		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);		
-		
-		// then		
+		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);
+
+		// then
 		assertEquals("authKey", connection.getAuthentication().getPrivateKeyFile().getPath());
 		assertEquals("authKeyPassword", connection.getAuthentication().getPrivateKeyFilePassword());
 		assertEquals("userName", connection.getAuthentication().getUsername());
 		assertEquals("sshHostName", connection.getSshHostName());
 		assertEquals(12, connection.getSshPort());
 	}
-	
+
 	@Test
-	@PrepareForTest({LoggerFactory.class})
+	@PrepareForTest({ LoggerFactory.class })
 	public void creatingFromEmptySettingsLogsError() throws Exception {
 		// given
 		String authKey = "";
@@ -50,19 +50,14 @@ public class GerritConnectionFactoryTest {
 		String userName = "";
 		int sshPort = 12;
 		String sshHostName = "";
-		
-        mockStatic(LoggerFactory.class);
+
+		mockStatic(LoggerFactory.class);
 		Logger loggerMock = mock(Logger.class);
-		
+
 		// when
-        when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
-        try{
-        	GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);
-        	fail();
-        }
-        catch(SonarException e){
-        	// then		
-        	verify(loggerMock, times(3)).error(anyString());
-        }
+		when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
+		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);
+		
+		assertEquals(connection instanceof EmptyGerritConnection, true);
 	}
 }

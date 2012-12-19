@@ -9,9 +9,11 @@ import org.sonar.api.batch.SensorContext;
 import org.sonar.api.config.Settings;
 import org.sonar.api.resources.Project;
 
+import com.pawelmaslyk.gerritintegration4sonar.gerrit.EmptyGerritCommit;
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommand;
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommit;
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommitFactory;
+import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.EmptyGerritConnection;
 import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
 import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnectionFactory;
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
@@ -31,7 +33,8 @@ public class GerritNotifier extends BuildBreaker {
 	/**
 	 * I create {@link GerritNotifier} and apply sonar settings
 	 * 
-	 * @param settings the settings
+	 * @param settings
+	 *            the settings
 	 */
 	public GerritNotifier(Settings settings) {
 		this.settings = settings;
@@ -49,15 +52,27 @@ public class GerritNotifier extends BuildBreaker {
 
 	private void analyseMeasures(SensorContext context, Logger logger) throws IOException {
 		GerritConnection connection = GerritConnectionFactory.createGerritConnectionFromSonarSettings(settings);
+
+		if (connection instanceof EmptyGerritConnection) {
+			logger.info("Gerrit has not been notified, because the gerrit connection has not been defined, please check plugin settings");
+			return;
+		}
+
 		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(settings);
-		SonarAnalysisResult mark = SonarResultEvaluator.markCommit(context, logger);		 
+		SonarAnalysisResult mark = SonarResultEvaluator.markCommit(context, logger);
 
-		logger.info(String.format("Sending results to gerrit for %s: %s", commit, mark));
+		if (commit instanceof EmptyGerritCommit) {
+			logger.info("Gerrit has not been notified, because the commit information is missing, please check if all parameters are passed while running sonar");
+			return;
+		} else {
 
-		SshConnection ssh = SshConnectionFactory.getConnection(connection);
-		String command = GerritCommand.createCodeReview(commit, mark);
-		ssh.executeCommand(command);
+			logger.info(String.format("Sending results to gerrit for %s: %s", commit, mark));
 
-		logger.info("Results sent successfully");
+			SshConnection ssh = SshConnectionFactory.getConnection(connection);
+			String command = GerritCommand.createCodeReview(commit, mark);
+			ssh.executeCommand(command);
+
+			logger.info("Results sent successfully");
+		}
 	}
 }

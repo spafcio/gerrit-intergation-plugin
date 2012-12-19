@@ -5,7 +5,6 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.config.Settings;
-import org.sonar.api.utils.SonarException;
 
 import com.google.common.base.Strings;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.Authentication;
@@ -58,7 +57,7 @@ public class GerritConnectionFactory {
 		if (requiredParametersAreSet(authKey, userName, sshHostName))
 			return new GerritConnection(createGerritAuthentication(authKey, userName, authKeyPassword), sshPort, sshHostName);
 		else
-			throw new SonarException("Cannot create gerrit connection, not all required parameters are set.");
+			return new EmptyGerritConnection(null, 0, null);
 	}
 
 	private static boolean requiredParametersAreSet(String authKey, String userName, String sshHostName) {

@@ -1,19 +1,19 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
@@ -25,14 +25,11 @@ import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasuresFilter;
 import org.sonar.api.measures.Metric;
 import org.sonar.api.resources.Project;
-import org.sonar.api.utils.SonarException;
 
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommit;
 import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.Authentication;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnection;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFactory;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshException;
 
 @RunWith(PowerMockRunner.class)
 public class GerritNotifierTest {
@@ -58,14 +55,10 @@ public class GerritNotifierTest {
 		
 		// when
         when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
-		// when
-		try{
-			gerritNotifier.executeOn(project, context);
-			fail();
-		}catch(SonarException e){
-			//then
-			verify(loggerMock, times(3)).error(anyString());
-		}
+        gerritNotifier.executeOn(project, context);
+        
+		// then
+		verify(loggerMock, times(3)).error(anyString());
 	}
 	
 	@Test
