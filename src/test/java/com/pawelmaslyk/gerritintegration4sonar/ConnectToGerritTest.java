@@ -15,11 +15,11 @@ import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFact
 
 public class ConnectToGerritTest {
 
-	private static final String authKey = "/home/pawel/.ssh/id_rsa_sonar";
+	private static final String authKey = System.getProperty("user.home") + "/.ssh/id_rsa_sonar";
 	private static final String authKeyPassword = null;
 	private static final String userName = "sonar";
 	private static final int sshPort = 29418;
-	private static final String hostName = "gerrit.localhost";
+	private static final String hostName = "127.0.0.1";
 
 	@Test
 	public void testIfOneCanConnectToGerrit() throws IOException {
