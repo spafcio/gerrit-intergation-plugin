@@ -39,4 +39,30 @@ Just install the gerrit trigger plugin and use the
 
 variables to specify maven parameters
 
+## Build environment
 
+If you want to build from sources or modify the sonar gerrit-integration-plugin,
+you should start by clone it from github.
+
+To run the unit tests, a gerrit install must be available at host `localhost`,
+port `29418`, and the account `sonar` created on it, and authorized with ssh.
+The project assumes that the ssh private key for the user `sonar` is stored
+at `~/.ssh/id_rsa_sonar`.
+
+    $ ssh_keygen -C "Sonar bot" -t rsa -f  ~/.ssh/id_rsa_sonar
+    $ cat ~/.ssh/id_rsa_sonar.pub | ssh -p 29418 sgala@localhost gerrit create-account sonar \
+             --email sgala@apache.org --full-name "Sonar\ bot" --group "Non-Interactive\ Users" --ssh-key -
+
+If all is well,
+
+    $ mvn verify
+
+will now build and test the project with no test failing.
+
+This very project can be installed in the local gerrit for testings by doing:
+
+    $ cd ${gerrit_install}/git
+    $ git clone --bare git@github.com:<user>/gerrit-intergation-plugin.git gerrit-integration-plugin.git
+    $ bin/gerrit.sh restart
+
+<user> should be either @spafcio@ or, better, your own github user after you have forked the project there.
