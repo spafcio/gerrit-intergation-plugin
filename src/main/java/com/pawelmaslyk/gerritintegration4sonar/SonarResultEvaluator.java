@@ -29,16 +29,12 @@ public class SonarResultEvaluator {
 	 * @return the sonar analysis result
 	 */
 	public static SonarAnalysisResult markCommit(SensorContext context, Logger logger) {
-		SonarAnalysisResult result = SonarAnalysisResult.NO_PROBLEMS;
-
-		if (countErrors(context, logger) > 0)
-			result = SonarAnalysisResult.ERRORS;
-		if (countWarnings(context, logger) > 0) {
-			if (result == SonarAnalysisResult.NO_PROBLEMS) {
-				result = SonarAnalysisResult.WARNINGS;
-			}
+		if (countErrors(context, logger) > 0) {
+			return SonarAnalysisResult.ERRORS;
+		} else if (countWarnings(context, logger) > 0) {
+			return SonarAnalysisResult.WARNINGS;
 		}
-		return result;
+		return SonarAnalysisResult.NO_PROBLEMS;
 	}
 
 	private static int countErrors(SensorContext context, Logger logger) {
