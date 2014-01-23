@@ -4,9 +4,11 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.BuildBreaker;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.config.Settings;
+import org.sonar.api.platform.Server;
 import org.sonar.api.resources.Project;
 
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.EmptyGerritCommit;
@@ -30,28 +32,31 @@ public class GerritNotifier extends BuildBreaker {
 
 	private final Settings settings;
 
+	private final Server server;
+
 	/**
 	 * I create {@link GerritNotifier} and apply sonar settings
 	 * 
 	 * @param settings
 	 *            the settings
 	 */
-	public GerritNotifier(Settings settings) {
+	public GerritNotifier(Settings settings, Server server) {
 		this.settings = settings;
+		this.server = server;
 	}
 
 	@Override
 	public void executeOn(Project project, SensorContext context) {
 		Logger logger = LoggerFactory.getLogger(getClass());
 		try {
-			analyseMeasures(context, logger);
+			analyseMeasures(project, context, logger);
 		} catch (IOException e) {
 			logger.error("Could not notify gerrit about the results of the analysis");
 			e.printStackTrace();
 		}
 	}
 
-	private void analyseMeasures(SensorContext context, Logger logger) throws IOException {
+	private void analyseMeasures(Project project, SensorContext context, Logger logger) throws IOException {
 		GerritConnection connection = GerritConnectionFactory.createGerritConnectionFromSonarSettings(settings);
 
 		if (connection instanceof EmptyGerritConnection) {
@@ -60,7 +65,8 @@ public class GerritNotifier extends BuildBreaker {
 		}
 
 		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(settings);
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger);
+		String dashboardUrl = getDashboardUrl(project);
+		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, dashboardUrl);
 
 		if (commit instanceof EmptyGerritCommit) {
 			logger.info("Gerrit has not been notified, because the commit information is missing, please check if all parameters are passed while running sonar");
@@ -75,5 +81,23 @@ public class GerritNotifier extends BuildBreaker {
 
 			logger.info("Results sent successfully");
 		}
+	}
+
+	/**
+	 * Copied from Sonar's {@link UpdateStatusJob#logSuccess(Logger)}
+	 * 
+	 * @return The URL for the Sonar dashboard
+	 */
+	private String getDashboardUrl(Project project) {
+		String baseUrl = settings.getString(CoreProperties.SERVER_BASE_URL);
+		if (baseUrl.equals(settings.getDefaultValue(CoreProperties.SERVER_BASE_URL))) {
+			// If server base URL was not configured in Sonar server then is is
+			// better to take URL configured on batch side
+			baseUrl = server.getURL();
+		}
+		if (!baseUrl.endsWith("/")) {
+			baseUrl += "/";
+		}
+		return baseUrl + "dashboard/index/" + project.getKey();
 	}
 }

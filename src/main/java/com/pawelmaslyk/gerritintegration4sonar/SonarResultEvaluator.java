@@ -29,11 +29,14 @@ public class SonarResultEvaluator {
 	 *            the sensor context
 	 * @param logger
 	 *            the logger
+	 * @param dashboardUrl
+	 *            The Sonar dashboard URL to include in the result message
 	 * @return the sonar analysis result
 	 */
-	public static SonarAnalysisResult getResult(SensorContext context, Logger logger) {
+	public static SonarAnalysisResult getResult(SensorContext context, Logger logger, String dashboardUrl) {
 		SonarAnalysisStatus status = SonarAnalysisStatus.NO_PROBLEMS;
-		StringBuilder messageBuilder = new StringBuilder("Sonar analysis:\n");
+
+		StringBuilder messageBuilder = new StringBuilder("Sonar analysis (").append(dashboardUrl).append("):\n");
 
 		List<Measure> errors = getErrors(context, logger);
 		List<Measure> warnings = getWarnings(context, logger);
