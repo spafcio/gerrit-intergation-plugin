@@ -40,6 +40,7 @@ public class GerritNotifier extends BuildBreaker {
 		this.settings = settings;
 	}
 
+	@Override
 	public void executeOn(Project project, SensorContext context) {
 		Logger logger = LoggerFactory.getLogger(getClass());
 		try {
@@ -59,17 +60,17 @@ public class GerritNotifier extends BuildBreaker {
 		}
 
 		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(settings);
-		SonarAnalysisResult mark = SonarResultEvaluator.markCommit(context, logger);
+		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger);
 
 		if (commit instanceof EmptyGerritCommit) {
 			logger.info("Gerrit has not been notified, because the commit information is missing, please check if all parameters are passed while running sonar");
 			return;
 		} else {
 
-			logger.info(String.format("Sending results to gerrit for %s: %s", commit, mark));
+			logger.info(String.format("Sending results to gerrit for %s: %s", commit, result));
 
 			SshConnection ssh = SshConnectionFactory.getConnection(connection);
-			String command = GerritCommand.createCodeReview(commit, mark);
+			String command = GerritCommand.createCodeReview(commit, result);
 			ssh.executeCommand(command);
 
 			logger.info("Results sent successfully");

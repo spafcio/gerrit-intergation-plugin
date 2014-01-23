@@ -4,12 +4,12 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-public class SonarAnalysisResultTest {
+public class SonarAnalysisStatusTest {
 
 	@Test
 	public void NO_PROBLEMSIsPlusOne() {
 		// given
-		SonarAnalysisResult result = SonarAnalysisResult.NO_PROBLEMS;
+		SonarAnalysisStatus result = SonarAnalysisStatus.NO_PROBLEMS;
 
 		// when
 		int approval = result.getApproval();
@@ -21,7 +21,7 @@ public class SonarAnalysisResultTest {
 	@Test
 	public void WARNIsPlusOne() {
 		// given
-		SonarAnalysisResult result = SonarAnalysisResult.WARNINGS;
+		SonarAnalysisStatus result = SonarAnalysisStatus.WARNINGS;
 
 		// when
 		int approval = result.getApproval();
@@ -33,7 +33,7 @@ public class SonarAnalysisResultTest {
 	@Test
 	public void ERRORIsPlusOne() {
 		// given
-		SonarAnalysisResult result = SonarAnalysisResult.ERRORS;
+		SonarAnalysisStatus result = SonarAnalysisStatus.ERRORS;
 
 		// when
 		int approval = result.getApproval();

@@ -1,6 +1,8 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.sonar.api.batch.SensorContext;
@@ -10,6 +12,7 @@ import org.sonar.api.measures.MeasuresFilters;
 import org.sonar.api.measures.Metric;
 
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
 
 /**
  * I contain logic to assess sonar analysis success
@@ -28,48 +31,73 @@ public class SonarResultEvaluator {
 	 *            the logger
 	 * @return the sonar analysis result
 	 */
-	public static SonarAnalysisResult markCommit(SensorContext context, Logger logger) {
-		SonarAnalysisResult result = SonarAnalysisResult.NO_PROBLEMS;
+	public static SonarAnalysisResult getResult(SensorContext context, Logger logger) {
+		SonarAnalysisStatus status = SonarAnalysisStatus.NO_PROBLEMS;
+		StringBuilder messageBuilder = new StringBuilder("Sonar analysis:\n");
 
-		if (countErrors(context, logger) > 0)
-			result = SonarAnalysisResult.ERRORS;
-		if (countWarnings(context, logger) > 0) {
-			if (result == SonarAnalysisResult.NO_PROBLEMS) {
-				result = SonarAnalysisResult.WARNINGS;
+		List<Measure> errors = getErrors(context, logger);
+		List<Measure> warnings = getWarnings(context, logger);
+		if (warnings.size() > 0) {
+			status = SonarAnalysisStatus.WARNINGS;
+			messageBuilder.append("  Warnings:");
+			for (Measure warning : warnings) {
+				messageBuilder.append("\n    ");
+				messageBuilder.append(warning.getAlertText());
 			}
 		}
-		return result;
+		if (errors.size() > 0) {
+			if (status == SonarAnalysisStatus.WARNINGS) {
+				messageBuilder.append("\n");
+			}
+
+			status = SonarAnalysisStatus.ERRORS;
+			messageBuilder.append("  Errors:");
+			for (Measure error : errors) {
+				messageBuilder.append("\n    ");
+				messageBuilder.append(error.getAlertText());
+			}
+		}
+		if (status == SonarAnalysisStatus.NO_PROBLEMS) {
+			messageBuilder.append("  No alerts.");
+		}
+
+		return new SonarAnalysisResult(messageBuilder.toString(), status);
 	}
 
-	private static int countErrors(SensorContext context, Logger logger) {
+	private static List<Measure> getErrors(SensorContext context, Logger logger) {
+		List<Measure> errors = new ArrayList<Measure>();
+
 		Collection<Measure> measures = context.getMeasures(MeasuresFilters.all());
-		int count = 0;
 		for (Measure measure : measures) {
 			if (isErrorAlert(measure)) {
 				logger.error(measure.getAlertText());
-				count++;
+				errors.add(measure);
 			}
 		}
-		return count;
+
+		return errors;
 	}
 
-	private static int countWarnings(SensorContext context, Logger logger) {
+	private static List<Measure> getWarnings(SensorContext context, Logger logger) {
+		List<Measure> warnings = new ArrayList<Measure>();
+
 		Collection<Measure> measures = context.getMeasures(MeasuresFilters.all());
-		int count = 0;
 		for (Measure measure : measures) {
 			if (isWarningAlert(measure)) {
 				logger.warn(measure.getAlertText());
-				count++;
+				warnings.add(measure);
 			}
 		}
-		return count;
+		return warnings;
 	}
 
 	private static boolean isWarningAlert(Measure measure) {
-		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS) && Metric.Level.WARN.equals(measure.getAlertStatus());
+		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS)
+				&& Metric.Level.WARN.equals(measure.getAlertStatus());
 	}
 
 	private static boolean isErrorAlert(Measure measure) {
-		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS) && Metric.Level.ERROR.equals(measure.getAlertStatus());
+		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS)
+				&& Metric.Level.ERROR.equals(measure.getAlertStatus());
 	}
 }

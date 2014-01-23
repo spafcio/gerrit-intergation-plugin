@@ -1,37 +1,37 @@
 package com.pawelmaslyk.gerritintegration4sonar.sonar;
 
 /**
- * I represent sonar result analysis
+ * Contains the result of a SonarQube analysis
  * 
- * @author pawel
- * 
+ * @author deiwin
  */
-public enum SonarAnalysisResult {
+public class SonarAnalysisResult {
 
 	/**
-	 * There were no alerts during analysis
+	 * Human-readable result of the analysis
 	 */
-	NO_PROBLEMS(1),
-	/**
-	 * There were alerts at warning level during analysis
-	 */
-	WARNINGS(-1),
-	/**
-	 * There were alerts at error level during analysis
-	 */
-	ERRORS(-2);
+	private final String message;
 
-	private final int approval;
+	/**
+	 * The end status of the analysis
+	 */
+	private final SonarAnalysisStatus status;
 
-	private SonarAnalysisResult(int approval) {
-		this.approval = approval;
+	public SonarAnalysisResult(String message, SonarAnalysisStatus status) {
+		this.message = message;
+		this.status = status;
 	}
 
-	/**
-	 * 
-	 * @return the approval rate
-	 */
-	public int getApproval() {
-		return approval;
+	public String getMessage() {
+		return message;
+	}
+
+	public SonarAnalysisStatus getStatus() {
+		return status;
+	}
+
+	@Override
+	public String toString() {
+		return "SonarAnalysisResult [message=" + message + ", status=" + status + "]";
 	}
 }
