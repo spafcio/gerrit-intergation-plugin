@@ -1,16 +1,14 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -18,38 +16,50 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.config.Settings;
-import org.sonar.api.measures.CoreMetrics;
-import org.sonar.api.measures.Measure;
-import org.sonar.api.measures.MeasuresFilter;
-import org.sonar.api.measures.Metric;
+import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.platform.Server;
 import org.sonar.api.resources.Project;
 
 import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommit;
 import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnection;
 import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFactory;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest({ GerritNotifier.class, SshConnectionFactory.class })
 public class GerritNotifierTest {
+
+	private static final String BASE_URL = "someurl";
+	private static final String URL = BASE_URL + "/dashboard/index/null";
 
 	@Mock
 	Server server;
+
+	@Mock
+	ProjectIssues projectIssues;
+
+	@Mock
+	SonarResultEvaluator sonarResultEvaluator;
+
+	@Mock
+	Project project;
+
+	@Mock
+	SensorContext context;
 
 	Settings settings = new Settings();
 
 	@Before
 	public void setUp() {
-		settings.appendProperty(CoreProperties.SERVER_BASE_URL, "someurl");
+		settings.appendProperty(CoreProperties.SERVER_BASE_URL, BASE_URL);
 	}
 
 	@Test
-	@PrepareForTest({ LoggerFactory.class, SshConnectionFactory.class })
 	public void forIncompleteSettingsCheckThatAnExceptionWasThrown() {
 		// given
 		settings.appendProperty(GerritConnection.GERRIT_AUTH_KEY_FILE_KEY, null);
@@ -58,24 +68,16 @@ public class GerritNotifierTest {
 		settings.appendProperty(GerritConnection.GERRIT_USERNAME_KEY, null);
 		settings.appendProperty(GerritConnection.GERRIT_SSH_PORT_KEY, "0");
 
-		Project project = mock(Project.class);
-		SensorContext context = mock(SensorContext.class);
-
-		mockStatic(LoggerFactory.class);
-		Logger loggerMock = mock(Logger.class);
-
-		GerritNotifier gerritNotifier = new GerritNotifier(settings, server);
+		GerritNotifier gerritNotifier = new GerritNotifier(settings, server, sonarResultEvaluator);
 
 		// when
-		when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
 		gerritNotifier.executeOn(project, context);
 
 		// then
-		verify(loggerMock, times(3)).error(anyString());
+		verifyZeroInteractions(sonarResultEvaluator);
 	}
 
 	@Test
-	@PrepareForTest({ LoggerFactory.class, SshConnectionFactory.class })
 	public void forCompleteSettingsCheckThatAnExceptionWasThrown() throws IOException {
 		// given
 		settings.appendProperty(GerritConnection.GERRIT_AUTH_KEY_FILE_KEY, "testfile");
@@ -88,40 +90,27 @@ public class GerritNotifierTest {
 		settings.appendProperty(GerritCommit.GERRIT_CHANGE_KEY, "12");
 		settings.appendProperty(GerritCommit.GERRIT_PATCH_KEY, "2");
 
-		GerritNotifier gerritNotifier = new GerritNotifier(settings, server);
-
-		Project project = mock(Project.class);
-		SensorContext context = mock(SensorContext.class);
+		GerritNotifier gerritNotifier = new GerritNotifier(settings, server, sonarResultEvaluator);
 
 		mockStatic(SshConnectionFactory.class);
 		SshConnection sshConnection = mock(SshConnection.class);
-
-		mockStatic(LoggerFactory.class);
-		Logger loggerMock = mock(Logger.class);
 
 		// when
 		when(sshConnection.isConnected()).thenReturn(true);
 		when(sshConnection.isAuthenticated()).thenReturn(true);
 		when(sshConnection.isSessionOpen()).thenReturn(true);
-
 		when(SshConnectionFactory.getConnection((GerritConnection) any())).thenReturn(sshConnection);
-
-		when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
-
-		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, null, null),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.OK, null),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, null)));
-
 		when(sshConnection.executeCommand(anyString())).thenReturn("OK");
+
+		when(sonarResultEvaluator.getResult(context, URL)).thenReturn(
+				new SonarAnalysisResult("message", SonarAnalysisStatus.NO_PROBLEMS));
+
 		gerritNotifier.executeOn(project, context);
 
 		// then
-		verify(sshConnection, times(1)).executeCommand(anyString());
+		verify(sshConnection).executeCommand(anyString());
+		verify(sonarResultEvaluator).getResult(context, URL);
 
 	}
 
-	private Measure newMeasure(Metric metric, Metric.Level level, String label) {
-		return new Measure(metric).setAlertStatus(level).setAlertText(label);
-	}
 }

@@ -2,24 +2,30 @@ package com.pawelmaslyk.gerritintegration4sonar;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.slf4j.Logger;
 import org.sonar.api.batch.SensorContext;
+import org.sonar.api.issue.Issue;
+import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasuresFilter;
 import org.sonar.api.measures.Metric;
+import org.sonar.api.rule.RuleKey;
+import org.sonar.api.rules.Rule;
+import org.sonar.api.rules.RuleFinder;
+import org.sonar.api.rules.RulePriority;
 
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
@@ -30,10 +36,21 @@ public class SonarResultEvaluatorTest {
 	private final static String ADDRESS = "http://10.10.10.10:9090/web/host";
 
 	@Mock
-	Logger logger;
+	SensorContext context;
 
 	@Mock
-	SensorContext context;
+	ProjectIssues projectIssues;
+
+	@Mock
+	RuleFinder ruleFinder;
+
+	SonarResultEvaluator sonarResultEvaluator;
+
+	@Before
+	public void setUp() {
+		sonarResultEvaluator = new SonarResultEvaluator(projectIssues, ruleFinder);
+		when(projectIssues.issues()).thenReturn(new ArrayList<Issue>());
+	}
 
 	@Test
 	public void resultShouldBePositiveForNoErrorsNorWarnings() {
@@ -43,9 +60,8 @@ public class SonarResultEvaluatorTest {
 						newMeasure(CoreMetrics.COVERAGE, Metric.Level.OK, "Message2"),
 						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message3")));
 
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, ADDRESS);
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
-		verify(logger, never()).error(anyString());
 		assertEquals(SonarAnalysisStatus.NO_PROBLEMS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  No alerts.", result.getMessage());
 	}
@@ -58,9 +74,8 @@ public class SonarResultEvaluatorTest {
 						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
 						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
 
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, ADDRESS);
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
-		verify(logger, times(1)).warn(anyString());
 		assertEquals(SonarAnalysisStatus.WARNINGS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Warnings:\n    Coverage<80", result.getMessage());
 	}
@@ -73,9 +88,8 @@ public class SonarResultEvaluatorTest {
 						newMeasure(CoreMetrics.COVERAGE, Metric.Level.ERROR, "Coverage<80"),
 						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
 
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, ADDRESS);
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
-		verify(logger, times(1)).error(anyString());
 		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Errors:\n    Coverage<80", result.getMessage());
 	}
@@ -88,12 +102,66 @@ public class SonarResultEvaluatorTest {
 						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
 						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
 
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, ADDRESS);
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
-		verify(logger, times(1)).error(anyString());
-		verify(logger, times(1)).warn(anyString());
 		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20",
+				result.getMessage());
+	}
+
+	@Test
+	public void resultShouldBeErrorsForErrorAndNoWarningsPlusOldIssues() {
+		// when
+		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
+				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
+		List<Issue> issues = new ArrayList<Issue>();
+		Issue issue = mock(Issue.class);
+		when(issue.isNew()).thenReturn(false);
+		issues.add(issue);
+		when(projectIssues.issues()).thenReturn(issues);
+
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
+
+		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
+		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20",
+				result.getMessage());
+	}
+
+	@Test
+	@PrepareForTest({ Rule.class })
+	public void resultShouldBeErrorsForErrorAndNoWarningsPlusNewIssues() {
+		// when
+
+		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
+				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
+
+		Rule rule = mock(Rule.class);
+		RuleKey ruleKey = RuleKey.parse("1:2");
+		when(ruleFinder.findByKey(ruleKey)).thenReturn(rule);
+		when(rule.getSeverity()).thenReturn(RulePriority.BLOCKER);
+
+		Issue issue = mock(Issue.class);
+		when(issue.isNew()).thenReturn(true);
+		when(issue.ruleKey()).thenReturn(ruleKey);
+		when(issue.message()).thenReturn("issue message");
+		when(issue.componentKey()).thenReturn("componentKey");
+		when(issue.line()).thenReturn(12);
+
+		List<Issue> issues = new ArrayList<Issue>();
+		issues.add(issue);
+		when(projectIssues.issues()).thenReturn(issues);
+
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
+
+		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
+		assertEquals(
+				"Sonar analysis ("
+						+ ADDRESS
+						+ "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20\nBLOCKER issues:\n  issue message\n    componentKey:12",
 				result.getMessage());
 	}
 

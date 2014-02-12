@@ -30,9 +30,13 @@ import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFact
  */
 public class GerritNotifier extends BuildBreaker {
 
+	private static final Logger logger = LoggerFactory.getLogger(GerritNotifier.class);
+
 	private final Settings settings;
 
 	private final Server server;
+
+	private final SonarResultEvaluator sonarResultEvaluator;
 
 	/**
 	 * I create {@link GerritNotifier} and apply sonar settings
@@ -40,23 +44,23 @@ public class GerritNotifier extends BuildBreaker {
 	 * @param settings
 	 *            the settings
 	 */
-	public GerritNotifier(Settings settings, Server server) {
+	public GerritNotifier(Settings settings, Server server, SonarResultEvaluator sonarResultEvaluator) {
 		this.settings = settings;
 		this.server = server;
+		this.sonarResultEvaluator = sonarResultEvaluator;
 	}
 
 	@Override
 	public void executeOn(Project project, SensorContext context) {
-		Logger logger = LoggerFactory.getLogger(getClass());
 		try {
-			analyseMeasures(project, context, logger);
+			analyseMeasures(project, context);
 		} catch (IOException e) {
 			logger.error("Could not notify gerrit about the results of the analysis");
 			e.printStackTrace();
 		}
 	}
 
-	private void analyseMeasures(Project project, SensorContext context, Logger logger) throws IOException {
+	private void analyseMeasures(Project project, SensorContext context) throws IOException {
 		GerritConnection connection = GerritConnectionFactory.createGerritConnectionFromSonarSettings(settings);
 
 		if (connection instanceof EmptyGerritConnection) {
@@ -66,7 +70,7 @@ public class GerritNotifier extends BuildBreaker {
 
 		GerritCommit commit = GerritCommitFactory.createGerritCommitFromSonarSettings(settings);
 		String dashboardUrl = getDashboardUrl(project);
-		SonarAnalysisResult result = SonarResultEvaluator.getResult(context, logger, dashboardUrl);
+		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, dashboardUrl);
 
 		if (commit instanceof EmptyGerritCommit) {
 			logger.info("Gerrit has not been notified, because the commit information is missing, please check if all parameters are passed while running sonar");
