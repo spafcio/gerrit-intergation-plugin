@@ -19,7 +19,11 @@ import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnect
 		@Property(key = GerritConnection.GERRIT_HOSTNAME_KEY, name = "Hostname", description = "The hostname where Gerrit is listening for ssh command connections."),
 		@Property(key = GerritConnection.GERRIT_SSH_PORT_KEY, type = PropertyType.INTEGER, defaultValue = "29418", name = "SSH Port", description = "The port where Gerrit is listening for ssh command connections."),
 		@Property(key = GerritConnection.GERRIT_USERNAME_KEY, defaultValue = "sonar", name = "Username", description = "The username to use when authenticating to Gerrit."),
-		})
+		@Property(key = GerritConnection.VOTE_POSITIVE, defaultValue = "1",  type = PropertyType.SINGLE_SELECT_LIST, name = "Pass Code-Review Vote", description = "The code-review vote cast by the Sonar in case of no alerts.", options = {"+1","0"}),
+		@Property(key = GerritConnection.VOTE_NEUTRAL,  defaultValue = "-1", type = PropertyType.SINGLE_SELECT_LIST, name = "Warn Code-Review Vote", description = "The code-review vote cast by the Sonar in case of warning level alerts.", options = {"0","-1"}),
+		@Property(key = GerritConnection.VOTE_NEGATIVE, defaultValue = "-2", type = PropertyType.SINGLE_SELECT_LIST, name = "Fail Code-Review Vote", description = "The code-review vote cast by the Sonar in case of error level alerts.", options = {"-1","-2"}),
+		@Property(key = GerritConnection.SONAR_METRICS, type = PropertyType.METRIC, multiValues = true, name = "Metrics to consider", description = "Only consider the selected metrics when evaluating the vote to cast."),
+})
 public final class GerritIntegrationPlugin extends SonarPlugin {
 
 	public List<?> getExtensions() {

@@ -34,6 +34,11 @@ public class GerritConnection {
 	 */
 	public static final String GERRIT_USERNAME_KEY = "gerrit.username";
 
+	public static final String VOTE_POSITIVE = "gerrit.votepass";
+	public static final String VOTE_NEUTRAL  = "gerrit.votewarn";
+	public static final String VOTE_NEGATIVE = "gerrit.votefail";
+	public static final String SONAR_METRICS = "gerrit.metrics";
+
 	private final Authentication authentication;
 	private final int sshPort;
 	private final String sshHostName;

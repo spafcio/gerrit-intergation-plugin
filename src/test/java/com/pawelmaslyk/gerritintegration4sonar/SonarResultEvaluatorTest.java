@@ -81,7 +81,7 @@ public class SonarResultEvaluatorTest {
 	}
 	
 	@Test
-	public void resultShouldBeErrorsForErrorAndNoWarnings() {
+	public void resultShouldBeErrorsForErrorAndWarnings() {
 		//given		
 		Logger logger = mock(Logger.class);
 		SensorContext context = mock(SensorContext.class);
@@ -96,7 +96,6 @@ public class SonarResultEvaluatorTest {
 		SonarAnalysisResult result = SonarResultEvaluator.markCommit(context, logger);
 		
 		verify(logger, times(1)).error(anyString());
-		verify(logger, times(1)).warn(anyString());
 		assertEquals(SonarAnalysisResult.ERRORS, result);
 	}
 
