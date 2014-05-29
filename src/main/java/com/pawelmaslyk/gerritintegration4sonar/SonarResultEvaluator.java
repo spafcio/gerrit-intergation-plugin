@@ -1,25 +1,15 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonar.api.BatchExtension;
 import org.sonar.api.batch.SensorContext;
-import org.sonar.api.issue.Issue;
-import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasuresFilters;
 import org.sonar.api.measures.Metric;
-import org.sonar.api.rules.Rule;
-import org.sonar.api.rules.RuleFinder;
-import org.sonar.api.rules.RulePriority;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,14 +25,6 @@ public class SonarResultEvaluator implements BatchExtension {
 
 	private static final Logger logger = LoggerFactory.getLogger(SonarResultEvaluator.class);
 
-	private final ProjectIssues projectIssues;
-
-	private final RuleFinder ruleFinder;
-
-	public SonarResultEvaluator(ProjectIssues projectIssues, RuleFinder ruleFinder) {
-		this.projectIssues = projectIssues;
-		this.ruleFinder = ruleFinder;
-	}
 
 	/**
 	 * I determine how successful was sonar analysis
@@ -83,51 +65,8 @@ public class SonarResultEvaluator implements BatchExtension {
 		if (status == SonarAnalysisStatus.NO_PROBLEMS) {
 			messageBuilder.append("  No alerts.");
 		}
-		messageBuilder.append(getIssuesMessage());
 
 		return new SonarAnalysisResult(messageBuilder.toString(), status);
-	}
-
-	private String getIssuesMessage() {
-		StringBuilder issuesMessage = new StringBuilder();
-		Multimap<RulePriority, Issue> issuesMappedBySeverity = getIssuesMappedBySeverity();
-		issuesMessage.append(getSeverityIssuesMessageIfAny(RulePriority.BLOCKER, issuesMappedBySeverity));
-		issuesMessage.append(getSeverityIssuesMessageIfAny(RulePriority.CRITICAL, issuesMappedBySeverity));
-		issuesMessage.append(getSeverityIssuesMessageIfAny(RulePriority.MAJOR, issuesMappedBySeverity));
-		issuesMessage.append(getSeverityIssuesMessageIfAny(RulePriority.MINOR, issuesMappedBySeverity));
-		return issuesMessage.toString();
-	}
-	private String getSeverityIssuesMessageIfAny(RulePriority severity,
-			Multimap<RulePriority, Issue> issuesMappedBySeverity) {
-		StringBuilder issuesMessage = new StringBuilder();
-		Collection<Issue> issuesForSeverity = issuesMappedBySeverity.get(severity);
-		if (!issuesForSeverity.isEmpty()) {
-			issuesMessage.append("\n");
-			issuesMessage.append(severity).append(" issues:");
-			for (Issue issue : issuesForSeverity) {
-				issuesMessage.append("\n");
-				issuesMessage.append("  " + issue.message());
-				issuesMessage.append("\n");
-				issuesMessage.append("    " + issue.componentKey() + ":" + issue.line());
-			}
-		}
-		return issuesMessage.toString();
-	}
-
-	private Multimap<RulePriority, Issue> getIssuesMappedBySeverity() {
-		Iterable<Issue> newIssues = Iterables.filter(projectIssues.issues(), new Predicate<Issue>() {
-			@Override
-			public boolean apply(Issue issue) {
-				return issue.isNew();
-			}
-		});
-		return Multimaps.index(newIssues, new Function<Issue, RulePriority>() {
-			@Override
-			public RulePriority apply(Issue issue) {
-				Rule rule = ruleFinder.findByKey(issue.ruleKey());
-				return rule.getSeverity();
-			}
-		});
 	}
 
 	private List<Measure> getErrors(SensorContext context) {
@@ -159,11 +98,11 @@ public class SonarResultEvaluator implements BatchExtension {
 
 	private boolean isWarningAlert(Measure measure) {
 		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS)
-				&& Metric.Level.WARN.equals(measure.getAlertStatus());
+		                && Metric.Level.WARN.equals(measure.getAlertStatus());
 	}
 
 	private boolean isErrorAlert(Measure measure) {
 		return !measure.getMetric().equals(CoreMetrics.ALERT_STATUS)
-				&& Metric.Level.ERROR.equals(measure.getAlertStatus());
+		                && Metric.Level.ERROR.equals(measure.getAlertStatus());
 	}
 }

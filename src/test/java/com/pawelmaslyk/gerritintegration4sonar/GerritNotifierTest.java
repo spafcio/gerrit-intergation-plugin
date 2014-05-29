@@ -1,15 +1,11 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-import java.io.IOException;
-
+import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommit;
+import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
+import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnection;
+import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,16 +15,16 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.sonar.api.CoreProperties;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.config.Settings;
-import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.platform.Server;
 import org.sonar.api.resources.Project;
 
-import com.pawelmaslyk.gerritintegration4sonar.gerrit.GerritCommit;
-import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
-import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
-import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnection;
-import com.sonyericsson.hudson.plugins.gerrit.gerritevents.ssh.SshConnectionFactory;
+import java.io.IOException;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ GerritNotifier.class, SshConnectionFactory.class })
@@ -39,9 +35,6 @@ public class GerritNotifierTest {
 
 	@Mock
 	Server server;
-
-	@Mock
-	ProjectIssues projectIssues;
 
 	@Mock
 	SonarResultEvaluator sonarResultEvaluator;
@@ -103,7 +96,7 @@ public class GerritNotifierTest {
 		when(sshConnection.executeCommand(anyString())).thenReturn("OK");
 
 		when(sonarResultEvaluator.getResult(context, URL)).thenReturn(
-				new SonarAnalysisResult("message", SonarAnalysisStatus.NO_PROBLEMS));
+		                new SonarAnalysisResult("message", SonarAnalysisStatus.NO_PROBLEMS));
 
 		gerritNotifier.executeOn(project, context);
 

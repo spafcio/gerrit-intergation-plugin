@@ -1,14 +1,7 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
+import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +10,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.sonar.api.batch.SensorContext;
 import org.sonar.api.issue.Issue;
-import org.sonar.api.issue.ProjectIssues;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasuresFilter;
@@ -27,8 +19,14 @@ import org.sonar.api.rules.Rule;
 import org.sonar.api.rules.RuleFinder;
 import org.sonar.api.rules.RulePriority;
 
-import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
-import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
 
 @RunWith(PowerMockRunner.class)
 public class SonarResultEvaluatorTest {
@@ -39,26 +37,22 @@ public class SonarResultEvaluatorTest {
 	SensorContext context;
 
 	@Mock
-	ProjectIssues projectIssues;
-
-	@Mock
 	RuleFinder ruleFinder;
 
 	SonarResultEvaluator sonarResultEvaluator;
 
 	@Before
 	public void setUp() {
-		sonarResultEvaluator = new SonarResultEvaluator(projectIssues, ruleFinder);
-		when(projectIssues.issues()).thenReturn(new ArrayList<Issue>());
+		sonarResultEvaluator = new SonarResultEvaluator();
 	}
 
 	@Test
 	public void resultShouldBePositiveForNoErrorsNorWarnings() {
 		// when
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, null, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.OK, "Message2"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message3")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, null, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.OK, "Message2"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message3")));
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
@@ -70,9 +64,9 @@ public class SonarResultEvaluatorTest {
 	public void resultShouldBeWarningsForNoErrorsButWarnings() {
 		// when
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
@@ -84,9 +78,9 @@ public class SonarResultEvaluatorTest {
 	public void resultShouldBeErrorsForErrorsButNoWarnings() {
 		// when
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.ERROR, "Coverage<80"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.ERROR, "Coverage<80"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.OK, "Message2")));
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
@@ -98,35 +92,33 @@ public class SonarResultEvaluatorTest {
 	public void resultShouldBeErrorsForErrorAndNoWarnings() {
 		// when
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
 		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20",
-				result.getMessage());
+		                result.getMessage());
 	}
 
 	@Test
 	public void resultShouldBeErrorsForErrorAndNoWarningsPlusOldIssues() {
 		// when
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
 		List<Issue> issues = new ArrayList<Issue>();
 		Issue issue = mock(Issue.class);
-		when(issue.isNew()).thenReturn(false);
 		issues.add(issue);
-		when(projectIssues.issues()).thenReturn(issues);
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
 		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
 		assertEquals("Sonar analysis (" + ADDRESS + "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20",
-				result.getMessage());
+		                result.getMessage());
 	}
 
 	@Test
@@ -135,9 +127,9 @@ public class SonarResultEvaluatorTest {
 		// when
 
 		when(context.getMeasures((MeasuresFilter) anyObject())).thenReturn(
-				Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
-						newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
-						newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
+		                Arrays.<Measure> asList(newMeasure(CoreMetrics.LINES, Metric.Level.OK, "Message1"),
+		                                newMeasure(CoreMetrics.COVERAGE, Metric.Level.WARN, "Coverage<80"),
+		                                newMeasure(CoreMetrics.CLASS_COMPLEXITY, Metric.Level.ERROR, "Complexity>20")));
 
 		Rule rule = mock(Rule.class);
 		RuleKey ruleKey = RuleKey.parse("1:2");
@@ -145,7 +137,6 @@ public class SonarResultEvaluatorTest {
 		when(rule.getSeverity()).thenReturn(RulePriority.BLOCKER);
 
 		Issue issue = mock(Issue.class);
-		when(issue.isNew()).thenReturn(true);
 		when(issue.ruleKey()).thenReturn(ruleKey);
 		when(issue.message()).thenReturn("issue message");
 		when(issue.componentKey()).thenReturn("componentKey");
@@ -153,16 +144,14 @@ public class SonarResultEvaluatorTest {
 
 		List<Issue> issues = new ArrayList<Issue>();
 		issues.add(issue);
-		when(projectIssues.issues()).thenReturn(issues);
 
 		SonarAnalysisResult result = sonarResultEvaluator.getResult(context, ADDRESS);
 
 		assertEquals(SonarAnalysisStatus.ERRORS, result.getStatus());
-		assertEquals(
-				"Sonar analysis ("
-						+ ADDRESS
-						+ "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20\nBLOCKER issues:\n  issue message\n    componentKey:12",
-				result.getMessage());
+		assertEquals("Sonar analysis ("
+		                + ADDRESS
+		                + "):\n  Warnings:\n    Coverage<80\n  Errors:\n    Complexity>20",
+		                result.getMessage());
 	}
 
 	private Measure newMeasure(Metric metric, Metric.Level level, String label) {

@@ -33,7 +33,7 @@ public class ConnectToGerritTest {
 
 		//when
 		//the analysis is run, the local sonar instance must be up
-		final SonarAnalysisResult result = new SonarAnalysisResult("test", SonarAnalysisStatus.ERRORS);
+		final SonarAnalysisResult result = new SonarAnalysisResult("test", SonarAnalysisStatus.WARNINGS);
 		String codeReview = GerritCommand.createCodeReview(commit, result);
 		ssh.executeCommand(codeReview);
 

@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<sonar.buildVersion>4.0</sonar.buildVersion>
+		<sonar.buildVersion>3.7.2</sonar.buildVersion>
 		<jdk.min.version>1.6</jdk.min.version>
 		<powermock.version>1.5.4</powermock.version>
 		<slf4jVersion>1.7.5</slf4jVersion>

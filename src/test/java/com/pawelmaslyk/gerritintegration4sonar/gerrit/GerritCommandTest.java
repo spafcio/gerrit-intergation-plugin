@@ -1,13 +1,12 @@
 package com.pawelmaslyk.gerritintegration4sonar.gerrit;
 
-import static org.mockito.Mockito.*;
-
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisResult;
 import com.pawelmaslyk.gerritintegration4sonar.sonar.SonarAnalysisStatus;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class GerritCommandTest {
 
@@ -24,7 +23,7 @@ public class GerritCommandTest {
 				SonarAnalysisStatus.NO_PROBLEMS));
 
 		// then
-		assertEquals("gerrit approve --project projectname --message \"Sonar analysis\" --code-review 1 1,2", command);
+		assertEquals("gerrit review --project projectname --message \"Sonar analysis\" --code-review 1 1,2", command);
 	}
 
 	@Test
@@ -40,7 +39,7 @@ public class GerritCommandTest {
 				SonarAnalysisStatus.WARNINGS));
 
 		// then
-		assertEquals("gerrit approve --project projectname --message \"Some\n message\" --code-review -1 1,2", command);
+		assertEquals("gerrit review --project projectname --message \"Some\n message\" --code-review -1 1,2", command);
 	}
 
 	@Test
@@ -56,7 +55,7 @@ public class GerritCommandTest {
 				SonarAnalysisStatus.ERRORS));
 
 		// then
-		assertEquals("gerrit approve --project projectname --message \"Error message\" --code-review -2 1,2", command);
+		assertEquals("gerrit review --project projectname --message \"Error message\" --code-review -2 1,2", command);
 	}
 
 }
