@@ -1,22 +1,15 @@
 package com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.sonar.api.utils.SonarException;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 public class GerritConnectionFactoryTest {
@@ -31,7 +24,8 @@ public class GerritConnectionFactoryTest {
 		String sshHostName = "sshHostName";
 
 		// when
-		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);
+		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword,
+		                userName, sshPort, sshHostName);
 
 		// then
 		assertEquals("authKey", connection.getAuthentication().getPrivateKeyFile().getPath());
@@ -56,8 +50,9 @@ public class GerritConnectionFactoryTest {
 
 		// when
 		when(LoggerFactory.getLogger(any(Class.class))).thenReturn(loggerMock);
-		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword, userName, sshPort, sshHostName);
-		
+		GerritConnection connection = GerritConnectionFactory.createGerritConnection(authKey, authKeyPassword,
+		                userName, sshPort, sshHostName);
+
 		assertEquals(connection instanceof EmptyGerritConnection, true);
 	}
 }

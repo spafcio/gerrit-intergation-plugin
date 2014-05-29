@@ -1,42 +1,37 @@
 package com.pawelmaslyk.gerritintegration4sonar.sonar;
 
-import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
-
 /**
- * I represent sonar result analysis
+ * Contains the result of a SonarQube analysis
  * 
- * @author pawel
- * 
+ * @author deiwin
  */
-public enum SonarAnalysisResult {
+public class SonarAnalysisResult {
 
 	/**
-	 * There were no alerts during analysis
+	 * Human-readable result of the analysis
 	 */
-	NO_PROBLEMS(GerritConnection.VOTE_POSITIVE, "Static analysis verification passed.\nResults detail: "),
-	/**
-	 * There were alerts at warning level during analysis
-	 */
-	WARNINGS(GerritConnection.VOTE_NEUTRAL, "Static analysis generated warnings.\nResults detail: "),
-	/**
-	 * There were alerts at error level during analysis
-	 */
-	ERRORS(GerritConnection.VOTE_NEGATIVE, "Static analisys generated error alerts.\nResults detail: ");
-
-	private final String voteKey;
 	private final String message;
 
-	private SonarAnalysisResult(String voteKey, String message) {
-		this.voteKey = voteKey;
-		this.message = message;
-	}
+	/**
+	 * The end status of the analysis
+	 */
+	private final SonarAnalysisStatus status;
 
-	public String getVoteKey() {
-		return voteKey;
+	public SonarAnalysisResult(String message, SonarAnalysisStatus status) {
+		this.message = message;
+		this.status = status;
 	}
 
 	public String getMessage() {
 		return message;
 	}
 
+	public SonarAnalysisStatus getStatus() {
+		return status;
+	}
+
+	@Override
+	public String toString() {
+		return "SonarAnalysisResult [message=" + message + ", status=" + status + "]";
+	}
 }
