@@ -1,14 +1,13 @@
 package com.pawelmaslyk.gerritintegration4sonar;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
+import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
 import org.sonar.api.Properties;
 import org.sonar.api.Property;
 import org.sonar.api.PropertyType;
 import org.sonar.api.SonarPlugin;
 
-import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnection;
+import java.util.List;
 
 /**
  * This class is the entry point for the gerrit integration plugin
@@ -26,7 +25,8 @@ import com.pawelmaslyk.gerritintegration4sonar.gerritconfiguration.GerritConnect
 })
 public final class GerritIntegrationPlugin extends SonarPlugin {
 
+	@Override
 	public List<?> getExtensions() {
-		return Arrays.asList(GerritNotifier.class);
+		return ImmutableList.of(GerritNotifier.class, SonarResultEvaluator.class);
 	}
 }
